@@ -1,0 +1,29 @@
+REDEPLOYER ARCHIVE 
+cd C:\Users\u016\Documents\ProspectFlow\
+tar -xzf prospect-app-fixed.tar.gz
+
+LANCER SERVEUR 
+cd C:\Users\u016\Documents\ProspectFlow\prospect-app
+npm run dev
+
+
+cd C:\Users\u016\Documents\ProspectFlow\
+tar -xzf prospect-app-fixed.tar.gz
+cd C:\Users\u016\Documents\ProspectFlow\prospect-app
+npm run dev
+
+
+COMPTE COMMERCIAL (TEST)
+lasbleis@ixeo.fr
+Test
+
+
+
+PROCHAINES ETAPES :
+✅ Supabase Auth + DB
+✅ Données persistantes
+✅ Multi-device
+✅ Sécurisé (JWT tokens, RLS)
+❌ Un peu plus de setup
+⏱️ Temps : 3-4h
+→ Puis : Déployer sur Vercel

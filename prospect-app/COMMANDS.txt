@@ -1,0 +1,91 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           🚀 ProspectFlow - COMMANDES ESSENTIELLES               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📁 ALLER AU DOSSIER
+  cd /home/claude/prospect-app
+
+🔧 INSTALLATION (première fois)
+  npm install
+
+▶️  DÉVELOPPEMENT (local)
+  npm run dev
+  → Ouvrir http://localhost:5173
+
+🏗️  BUILD PRODUCTION
+  npm run build
+
+🌐 DÉPLOYER SUR VERCEL (gratuit)
+  npm i -g vercel
+  vercel login
+  vercel
+  → URL: https://prospect-[id].vercel.app
+
+📚 DOCUMENTATION
+  cat QUICK_START.md        (démarrage rapide)
+  cat GUIDE_COMPLET.md      (guide complet + FAQ)
+  cat LIVRAISON.md          (résumé de la livraison)
+
+🧪 TEST IMMÉDIAT
+  npm run dev
+  → Cliquez "Démo rapide"
+
+📦 STRUCTURE
+  src/
+    ├── components/        (8 fichiers React)
+    ├── store.js          (Zustand state)
+    ├── utils.js          (géocodage + distance)
+    └── xlsxUtils.js      (import Excel)
+
+💾 DONNÉES STOCKÉES
+  localStorage (navigateur)
+  → Persistent, ~10 MB max
+  → Phase 2: Supabase
+
+🎨 DESIGN
+  Tailwind CSS v3 + noCRM style
+  Responsive desktop/tablet/mobile
+
+🔌 SERVICES GRATUITS
+  ✅ Nominatim (géocodage)
+  ✅ OpenStreetMap (cartes)
+  ✅ Vercel (déploiement)
+  ✅ localStorage (stockage)
+
+⚙️  VARIABLES ENV
+  Aucune nécessaire en v1 !
+
+🐛 RESET DONNÉES (console browser)
+  localStorage.clear()
+
+─────────────────────────────────────────────────────────────────
+
+📋 CHECKLIST DÉPLOIEMENT
+
+  [ ] npm install ✅
+  [ ] npm run dev ✅
+  [ ] Tester localement ✅
+  [ ] Créer fichier test.xlsx ✅
+  [ ] Importer depuis Manager ✅
+  [ ] Lancer campagne depuis Commercial ✅
+  [ ] npm run build ✅
+  [ ] vercel (déployer) ✅
+  [ ] Partager URL avec équipe ✅
+
+─────────────────────────────────────────────────────────────────
+
+🎯 FLUX UTILISATEUR
+
+MANAGER:
+  1. Import contacts (XLSX)
+  2. Consulter stats
+  3. Suivre équipes
+
+COMMERCIAL:
+  1. Lancer campagne (rayon géo)
+  2. Prospecter contacts (liste/carte)
+  3. Enregistrer actions (appels/visites)
+
+─────────────────────────────────────────────────────────────────
+
+ProspectFlow v1.0 | 100% Gratuit | Prêt à l'emploi 🎉

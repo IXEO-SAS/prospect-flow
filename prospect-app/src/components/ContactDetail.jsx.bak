@@ -1,0 +1,706 @@
+import React, { useState } from 'react';
+import { X, Plus, Trash2, Phone, MapPin, Briefcase } from 'lucide-react';
+import { useProspectStore } from '../store';
+
+const InterestList = [
+  'Impression', 'Informatique', 'Sauvegarde', 'Microsoft 365',
+  'GED', 'Affichage dynamique', 'Écran tactile interactif'
+];
+
+const statusColors = {
+  new: 'bg-red-100 text-red-700 border border-red-300',
+  contacted: 'bg-yellow-100 text-yellow-700 border border-yellow-300',
+  action: 'bg-green-100 text-green-700 border border-green-300',
+};
+
+const statusLabels = {
+  new: 'Non contacté',
+  contacted: 'Contacté - Sans suite',
+  action: 'Action commerciale',
+};
+
+export default function ContactDetail({ contact, onClose }) {
+  const [tab, setTab] = useState('info');
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState(contact);
+  const [newInterlocutor, setNewInterlocutor] = useState({ name: '', title: '', phone: '', email: '' });
+  const [newAction, setNewAction] = useState({ type: 'call', note: '' });
+  const [selectedInterlocutors, setSelectedInterlocutors] = useState([]);
+  const [selectedNextActions, setSelectedNextActions] = useState([]);
+
+  const updateContact = useProspectStore(s => s.updateContact);
+  const getContactActions = useProspectStore(s => s.getContactActions);
+  const addAction = useProspectStore(s => s.addAction);
+  const addNotification = useProspectStore(s => s.addNotification);
+  const users = useProspectStore(s => s.users);
+
+  const actions = getContactActions(contact.id);
+
+  const handleSave = () => {
+    updateContact(contact.id, formData);
+    setEditMode(false);
+    addNotification({
+      type: 'success',
+      message: 'Contact mis à jour',
+      duration: 2000,
+    });
+  };
+
+  const handleAddInterlocutor = () => {
+    if (!newInterlocutor.name) return;
+    const updated = {
+      ...formData,
+      interlocutors: [...(formData.interlocutors || []), newInterlocutor],
+    };
+    setFormData(updated);
+    setNewInterlocutor({ name: '', title: '', phone: '' });
+  };
+
+  const handleRemoveInterlocutor = (idx) => {
+    const updated = {
+      ...formData,
+      interlocutors: formData.interlocutors.filter((_, i) => i !== idx),
+    };
+    setFormData(updated);
+  };
+
+  const handleAddAction = () => {
+    if (!newAction.note) return;
+    addAction({
+      contactId: contact.id,
+      type: newAction.type,
+      note: newAction.note,
+      userId: null, // Will be set on store
+    });
+    setNewAction({ type: 'call', note: '' });
+  };
+
+  const handleRemoveAction = (actionId) => {
+    // Placeholder - need to add remove action to store
+  };
+
+  const toggleInterest = (interest) => {
+    const updated = {
+      ...formData,
+      interests: {
+        ...formData.interests,
+        [interest]: !formData.interests?.[interest],
+      },
+    };
+    setFormData(updated);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+        {/* Header */}
+        <div className="bg-gradient-nocr text-white p-6 flex justify-between items-start sticky top-0">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-2xl font-bold">{formData.raisonSociale}</h2>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[formData.status]}`}>
+                {statusLabels[formData.status]}
+              </span>
+              {formData.assignedTo && (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/40">
+                  👤 Assigné à {users.find(u => u.id === formData.assignedTo)?.name || 'N/A'}
+                </span>
+              )}
+            </div>
+            <p className="text-white/80 flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              {formData.libelleNaf || 'N/A'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/80 hover:text-white transition"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 sticky top-20 bg-white">
+          {[
+            { id: 'info', label: 'Infos', icon: '📋' },
+            { id: 'interests', label: 'Intérêts', icon: '⭐' },
+            { id: 'contacts', label: 'Contacts', icon: '👥' },
+            { id: 'actions', label: 'Actions', icon: '✅' },
+            { id: 'next', label: 'Next', icon: '📅' },
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 py-3 px-4 border-b-2 transition font-semibold ${
+                tab === t.id
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-700'
+              }`}
+            >
+              <span>{t.icon} {t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* INFO */}
+          {tab === 'info' && (
+            <div className="space-y-4">
+              {!editMode ? (
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
+                      Dirigeant
+                    </p>
+                    <p className="text-gray-700 font-semibold">{formData.dirigeant}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
+                      Téléphone
+                    </p>
+                    <p className="text-gray-700 font-semibold flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      {formData.telephone || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
+                      Adresse
+                    </p>
+                    <p className="text-gray-700 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {formData.adresse}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
+                      Code NAF
+                    </p>
+                    <p className="text-gray-700">{formData.codeNaf || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
+                      Géolocalisation
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      {formData.lat?.toFixed(4)}, {formData.lon?.toFixed(4)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={formData.dirigeant}
+                    onChange={(e) => setFormData({ ...formData, dirigeant: e.target.value })}
+                    placeholder="Dirigeant"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+                  />
+                  <input
+                    type="tel"
+                    value={formData.telephone || ''}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    placeholder="Téléphone"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                {editMode ? (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      className="flex-1 bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition font-semibold"
+                    >
+                      Enregistrer
+                    </button>
+                    <button
+                      onClick={() => setEditMode(false)}
+                      className="flex-1 border border-gray-200 py-2 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      Annuler
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="w-full border border-primary-500 text-primary-500 py-2 rounded-lg hover:bg-primary-50 transition font-semibold"
+                  >
+                    Modifier
+                  </button>
+                )}
+              </div>
+
+              {/* Status Selector */}
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500 font-semibold uppercase mb-2">
+                  Statut
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(statusLabels).map(([status, label]) => (
+                    <button
+                      key={status}
+                      onClick={() => updateContact(contact.id, { status })}
+                      className={`py-2 px-3 rounded-lg text-sm font-semibold transition ${
+                        formData.status === status
+                          ? statusColors[status]
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* INTERESTS */}
+          {tab === 'interests' && (
+            <div className="space-y-3">
+              <p className="text-gray-600 text-sm">Sélectionnez les domaines d'intérêt :</p>
+              <div className="grid grid-cols-2 gap-3">
+                {InterestList.map(interest => (
+                  <label
+                    key={interest}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition ${
+                      formData.interests?.[interest]
+                        ? 'bg-primary-50 border-primary-500'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.interests?.[interest] || false}
+                      onChange={() => toggleInterest(interest)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="font-semibold text-gray-700">{interest}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CONTACTS */}
+          {tab === 'contacts' && (
+            <div className="space-y-4">
+              {/* Bouton ajouter */}
+              <button
+                onClick={() => {
+                  const updated = {
+                    ...formData,
+                    interlocutors: [...(formData.interlocutors || []), { name: '', title: '', phone: '', email: '', files: [] }],
+                  };
+                  setFormData(updated);
+                }}
+                className="w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold text-lg flex items-center justify-center"
+                title="Ajouter interlocuteur"
+              >
+                +
+              </button>
+
+              {/* Tableau Contacts */}
+              <div className="space-y-2">
+                {selectedInterlocutors.length > 0 && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <span className="text-sm text-red-700">
+                      {selectedInterlocutors.length} entrée(s) sélectionnée(s)
+                    </span>
+                    <button
+                      onClick={() => {
+                        const updated = {
+                          ...formData,
+                          interlocutors: formData.interlocutors.filter((_, idx) => !selectedInterlocutors.includes(idx)),
+                        };
+                        setFormData(updated);
+                        setSelectedInterlocutors([]);
+                      }}
+                      className="ml-auto flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                      <tr>
+                        <th className="px-3 py-2 text-center w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedInterlocutors.length === (formData.interlocutors || []).length && (formData.interlocutors || []).length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedInterlocutors((formData.interlocutors || []).map((_, idx) => idx));
+                              } else {
+                                setSelectedInterlocutors([]);
+                              }
+                            }}
+                            className="w-4 h-4"
+                          />
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Nom</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Fonction</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Tél.</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Email</th>
+                        <th className="px-4 py-2 text-center font-semibold text-gray-700">PJ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                    {(formData.interlocutors || []).map((person, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50 transition">
+                        <td className="px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedInterlocutors.includes(idx)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedInterlocutors([...selectedInterlocutors, idx]);
+                              } else {
+                                setSelectedInterlocutors(selectedInterlocutors.filter(i => i !== idx));
+                              }
+                            }}
+                            className="w-4 h-4"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={person.name}
+                              onChange={(e) => {
+                                const updated = [...formData.interlocutors];
+                                updated[idx].name = e.target.value;
+                                setFormData({ ...formData, interlocutors: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Nom"
+                            />
+                          ) : (
+                            <span className="font-semibold text-gray-700">{person.name}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={person.title}
+                              onChange={(e) => {
+                                const updated = [...formData.interlocutors];
+                                updated[idx].title = e.target.value;
+                                setFormData({ ...formData, interlocutors: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Fonction"
+                            />
+                          ) : (
+                            <span className="text-gray-600">{person.title}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="tel"
+                              value={person.phone}
+                              onChange={(e) => {
+                                const updated = [...formData.interlocutors];
+                                updated[idx].phone = e.target.value;
+                                setFormData({ ...formData, interlocutors: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Tél."
+                            />
+                          ) : (
+                            <span className="text-gray-600">{person.phone}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="email"
+                              value={person.email || ''}
+                              onChange={(e) => {
+                                const updated = [...formData.interlocutors];
+                                updated[idx].email = e.target.value;
+                                setFormData({ ...formData, interlocutors: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Email"
+                            />
+                          ) : (
+                            <span className="text-gray-600">{person.email || '-'}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.onchange = (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  // Simulation stockage fichier (en production, upload vers serveur)
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    const updated = [...formData.interlocutors];
+                                    if (!updated[idx].files) updated[idx].files = [];
+                                    updated[idx].files.push({
+                                      name: file.name,
+                                      type: file.type,
+                                      size: file.size,
+                                      data: reader.result,
+                                    });
+                                    setFormData({ ...formData, interlocutors: updated });
+                                    addNotification({
+                                      type: 'success',
+                                      message: `Fichier "${file.name}" ajouté`,
+                                      duration: 2000,
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              };
+                              input.click();
+                            }}
+                            className="text-blue-600 hover:bg-blue-50 p-2 rounded transition"
+                            title="Importer fichier"
+                          >
+                            📎
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* NEXT ACTIONS */}
+          {tab === 'next' && (
+            <div className="space-y-4">
+              {/* Bouton ajouter */}
+              <button
+                onClick={() => {
+                  const updated = {
+                    ...formData,
+                    nextActions: [...(formData.nextActions || []), { type: 'call', date: '', details: '', action: 'call' }],
+                  };
+                  setFormData(updated);
+                }}
+                className="w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-lg flex items-center justify-center"
+                title="Ajouter action"
+              >
+                +
+              </button>
+
+              {/* Tableau Next Actions */}
+              <div className="space-y-2">
+                {selectedNextActions.length > 0 && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <span className="text-sm text-red-700">
+                      {selectedNextActions.length} entrée(s) sélectionnée(s)
+                    </span>
+                    <button
+                      onClick={() => {
+                        const updated = {
+                          ...formData,
+                          nextActions: formData.nextActions.filter((_, idx) => !selectedNextActions.includes(idx)),
+                        };
+                        setFormData(updated);
+                        setSelectedNextActions([]);
+                      }}
+                      className="ml-auto flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                      <tr>
+                        <th className="px-3 py-2 text-center w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedNextActions.length === (formData.nextActions || []).length && (formData.nextActions || []).length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedNextActions((formData.nextActions || []).map((_, idx) => idx));
+                              } else {
+                                setSelectedNextActions([]);
+                              }
+                            }}
+                            className="w-4 h-4"
+                          />
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Type</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Détails</th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                    {(formData.nextActions || []).map((action, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedNextActions.includes(idx)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedNextActions([...selectedNextActions, idx]);
+                              } else {
+                                setSelectedNextActions(selectedNextActions.filter(i => i !== idx));
+                              }
+                            }}
+                            className="w-4 h-4"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <select
+                              value={action.type || 'call'}
+                              onChange={(e) => {
+                                const updated = [...formData.nextActions];
+                                updated[idx].type = e.target.value;
+                                setFormData({ ...formData, nextActions: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                            >
+                              <option value="call">📞 Appel</option>
+                              <option value="relance">🔄 Relance</option>
+                              <option value="rdv">📌 Rendez-vous</option>
+                              <option value="doc">📄 Envoi documentation</option>
+                              <option value="suivi">🔍 Suivi / Qualification</option>
+                            </select>
+                          ) : (
+                            <span className="font-semibold">
+                              {action.type === 'call' ? '📞 Appel' : action.type === 'relance' ? '🔄 Relance' : action.type === 'rdv' ? '📌 Rendez-vous' : action.type === 'doc' ? '📄 Envoi documentation' : '🔍 Suivi / Qualification'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="date"
+                              value={action.date || ''}
+                              onChange={(e) => {
+                                const updated = [...formData.nextActions];
+                                updated[idx].date = e.target.value;
+                                setFormData({ ...formData, nextActions: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-gray-600">
+                              {action.date ? new Date(action.date).toLocaleDateString('fr-FR') : '-'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={action.details || ''}
+                              onChange={(e) => {
+                                const updated = [...formData.nextActions];
+                                updated[idx].details = e.target.value;
+                                setFormData({ ...formData, nextActions: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Détails"
+                            />
+                          ) : (
+                            <span className="text-gray-700">{action.details || '-'}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editMode ? (
+                            <select
+                              value={action.action || 'call'}
+                              onChange={(e) => {
+                                const updated = [...formData.nextActions];
+                                updated[idx].action = e.target.value;
+                                setFormData({ ...formData, nextActions: updated });
+                              }}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                            >
+                              <option value="call">📞 Appel</option>
+                              <option value="visit">🏢 Visite</option>
+                              <option value="email">📧 Email</option>
+                            </select>
+                          ) : (
+                            <span>
+                              {action.action === 'call' ? '📞 Appel' : action.action === 'visit' ? '🏢 Visite' : '📧 Email'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ACTIONS */}
+          {tab === 'actions' && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {actions.length > 0 ? (
+                  actions.map(action => (
+                    <div key={action.id} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-semibold text-primary-600 uppercase">
+                          {action.type === 'call' ? '📞 Appel' : action.type === 'visit' ? '🏢 Visite' : '📧 Email'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(action.timestamp).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                      <p className="text-gray-700">{action.note}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-8">Aucune action</p>
+                )}
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-blue-900">Ajouter une action</h4>
+                <select
+                  value={newAction.type}
+                  onChange={(e) => setNewAction({ ...newAction, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
+                  <option value="call">📞 Appel téléphonique</option>
+                  <option value="visit">🏢 Visite</option>
+                  <option value="email">📧 Email</option>
+                </select>
+                <textarea
+                  value={newAction.note}
+                  onChange={(e) => setNewAction({ ...newAction, note: e.target.value })}
+                  placeholder="Notes / compte-rendu..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm h-24 resize-none"
+                />
+                <button
+                  onClick={handleAddAction}
+                  className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Ajouter action
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
