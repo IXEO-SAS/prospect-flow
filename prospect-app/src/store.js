@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchAllUsers, addUserSupabase, approveUserSupabase, rejectUserSupabase } from './services/supabaseUsers';
+import { fetchAllUsers, addUserSupabase, approveUserSupabase, rejectUserSupabase, deleteUserSupabase } from './services/supabaseUsers';
 import { fetchAllContacts, addContactSupabase, updateContactSupabase, deleteContactSupabase } from './services/supabaseContacts';
 import { fetchAllCampaigns, addCampaignSupabase, updateCampaignSupabase, deleteCampaignSupabase } from './services/supabaseCampaigns';
 import { fetchAllActions, addActionSupabase, deleteActionSupabase } from './services/supabaseActions';
@@ -27,13 +27,20 @@ export const useProspectStore = create((set, get) => ({
       console.error('❌ Supabase addUser error:', err)
     );
   },
-  removeUser: (userId) => set((state) => ({
-    users: state.users.filter(u => u.id !== userId),
-    // Réaffecter tous les contacts de cet utilisateur à null
-    contacts: state.contacts.map(c => 
-      c.assignedTo === userId ? { ...c, assignedTo: null } : c
-    ),
-  })),
+  removeUser: (userId) => {
+    set((state) => ({
+      users: state.users.filter(u => u.id !== userId),
+      // Réaffecter tous les contacts de cet utilisateur à null
+      contacts: state.contacts.map(c => 
+        c.assignedTo === userId ? { ...c, assignedTo: null } : c
+      ),
+    }));
+    
+    // ✅ Supprimer aussi dans Supabase
+    deleteUserSupabase(userId).catch(err => 
+      console.error('❌ Supabase removeUser error:', err)
+    );
+  },
   
   // Approbation des comptes
   approveUser: (userId) => {
