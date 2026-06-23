@@ -93,21 +93,41 @@ export const useProspectStore = create((set, get) => ({
   
   // Campagnes de prospection
   campaigns: [],
-  addCampaign: (campaign) => set((state) => ({
-    campaigns: [...state.campaigns, {
+  addCampaign: (campaign) => {
+    const newCampaign = {
       id: generateId(),
       createdAt: new Date().toISOString(),
-      status: 'active', // 'active', 'paused', 'completed'
-      name: '', // Nom optionnel de la campagne
+      status: 'active',
+      name: '',
       ...campaign,
-    }],
-  })),
-  updateCampaign: (id, updates) => set((state) => ({
-    campaigns: state.campaigns.map(c => c.id === id ? { ...c, ...updates } : c),
-  })),
-  removeCampaign: (id) => set((state) => ({
-    campaigns: state.campaigns.filter(c => c.id !== id),
-  })),
+    };
+    
+    set((state) => ({
+      campaigns: [...state.campaigns, newCampaign],
+    }));
+    
+    addCampaignSupabase(newCampaign).catch(err => 
+      console.error('❌ Supabase addCampaign error:', err)
+    );
+  },
+  updateCampaign: (id, updates) => {
+    set((state) => ({
+      campaigns: state.campaigns.map(c => c.id === id ? { ...c, ...updates } : c),
+    }));
+    
+    updateCampaignSupabase(id, updates).catch(err => 
+      console.error('❌ Supabase updateCampaign error:', err)
+    );
+  },
+  removeCampaign: (id) => {
+    set((state) => ({
+      campaigns: state.campaigns.filter(c => c.id !== id),
+    }));
+    
+    deleteCampaignSupabase(id).catch(err => 
+      console.error('❌ Supabase removeCampaign error:', err)
+    );
+  },
   
   // Contacts
   removeContact: (id) => {
@@ -119,13 +139,21 @@ export const useProspectStore = create((set, get) => ({
   
   // Historique actions
   actions: [],
-  addAction: (action) => set((state) => ({
-    actions: [...state.actions, {
+  addAction: (action) => {
+    const newAction = {
       id: generateId(),
       timestamp: new Date().toISOString(),
       ...action,
-    }],
-  })),
+    };
+    
+    set((state) => ({
+      actions: [...state.actions, newAction],
+    }));
+    
+    addActionSupabase(newAction).catch(err => 
+      console.error('❌ Supabase addAction error:', err)
+    );
+  },
   getContactActions: (contactId) => {
     const { actions } = get();
     return actions.filter(a => a.contactId === contactId).sort((a, b) => 
