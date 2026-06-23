@@ -7,13 +7,9 @@ import Notifications from './components/Notifications';
 
 function App() {
   const currentUser = useProspectStore(s => s.currentUser);
-  const loadState = useProspectStore(s => s.loadState);
 
-  // Charger l'état au démarrage
+  // Charger UNIQUEMENT depuis Supabase au démarrage
   useEffect(() => {
-    loadState();
-    
-    // Charger depuis Supabase (fusion avec données locales)
     const initSupabase = async () => {
       const initializeFromSupabase = useProspectStore.getState().initializeFromSupabase;
       await initializeFromSupabase();

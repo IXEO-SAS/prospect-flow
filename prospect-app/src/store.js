@@ -145,62 +145,6 @@ export const useProspectStore = create((set, get) => ({
     notifications: state.notifications.filter(n => n.id !== id),
   })),
   
-  // Persistence localStorage
-  persistState: () => {
-    const state = get();
-    localStorage.setItem('prospect-app-state', JSON.stringify({
-      contacts: state.contacts,
-      campaigns: state.campaigns,
-      actions: state.actions,
-      users: state.users,
-    }));
-  },
-  
-  loadState: () => {
-    const saved = localStorage.getItem('prospect-app-state');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        
-        // Fonction pour fixer les IDs dupliqués
-        const fixDuplicateIds = (items) => {
-          if (!items || !Array.isArray(items)) return [];
-          
-          const seenIds = new Set();
-          let counter = Date.now();
-          
-          return items.map((item, idx) => {
-            let newId = item.id;
-            
-            // Si l'ID existe déjà ou est invalide, génère un nouveau (STRING)
-            if (seenIds.has(newId) || !newId) {
-              newId = `${counter}-${idx}-${Math.random().toString(36).substr(2, 9)}`;
-            }
-            
-            seenIds.add(newId);
-            return { ...item, id: newId };
-          });
-        };
-        
-        const cleanContacts = fixDuplicateIds(data.contacts || []);
-        const cleanCampaigns = fixDuplicateIds(data.campaigns || []);
-        const cleanActions = fixDuplicateIds(data.actions || []);
-        const cleanUsers = fixDuplicateIds(data.users || []);
-        
-        set({
-          contacts: cleanContacts,
-          campaigns: cleanCampaigns,
-          actions: cleanActions,
-          users: cleanUsers,
-        });
-      } catch (e) {
-        console.error('Erreur chargement état:', e);
-        // Clear corrupted data
-        localStorage.removeItem('prospect-app-state');
-      }
-    }
-  },
-
   // Charger les données depuis Supabase (appelé au démarrage)
   initializeFromSupabase: async () => {
     console.log('🔄 Chargement des données depuis Supabase...');
@@ -228,8 +172,3 @@ export const useProspectStore = create((set, get) => ({
     }
   },
 }));
-
-// Persister après chaque changement
-useProspectStore.subscribe((state) => {
-  state.persistState();
-});

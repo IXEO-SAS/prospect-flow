@@ -45,6 +45,12 @@ export default function LoginPage() {
         return;
       }
       
+      // Vérifier que l'email n'existe pas déjà
+      if (users.find(u => u.email === email)) {
+        alert('❌ Cet email est déjà utilisé');
+        return;
+      }
+      
       const newUser = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Math.random().toString(36).substr(2, 9)}`,
         email,
@@ -52,23 +58,20 @@ export default function LoginPage() {
         password,
         role,
         color: colors[Math.floor(Math.random() * colors.length)],
+        approvalStatus: 'pending', // ✅ IMPORTANT : toujours pending
         permissions: role === 'manager' 
           ? ['create', 'read', 'update', 'delete'] 
           : ['create', 'read', 'update'],
       };
       
+      // ✅ Envoyer directement à Supabase (addUser fait le reste)
       addUser(newUser);
       
-      // Message selon la config
-      if (APP_CONFIG.requireApproval) {
-        setSignupMessage(`✅ Inscription réussie ! En attente d'approbation par l'administrateur`);
-        setEmail('');
-        setPassword('');
-        setName('');
-      } else {
-        // Dev mode : connexion auto
-        setCurrentUser(newUser);
-      }
+      // Message de confirmation
+      setSignupMessage(`✅ Inscription réussie ! En attente d'approbation par l'administrateur`);
+      setEmail('');
+      setPassword('');
+      setName('');
     }
   };
 
