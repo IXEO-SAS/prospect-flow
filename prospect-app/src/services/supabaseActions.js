@@ -43,7 +43,7 @@ export const addActionSupabase = async (action) => {
   }
 };
 
-// Supprimer une action
+// Supprimer UNE action
 export const deleteActionSupabase = async (actionId) => {
   try {
     const { error } = await supabase
@@ -56,6 +56,23 @@ export const deleteActionSupabase = async (actionId) => {
     return true;
   } catch (err) {
     console.error('❌ Error deleting action:', err.message);
+    return false;
+  }
+};
+
+// Supprimer TOUTES les actions
+export const deleteAllActionsSupabase = async () => {
+  try {
+    const { error } = await supabase
+      .from('actions')
+      .delete()
+      .neq('id', '');
+    
+    if (error) throw error;
+    console.log('✅ All actions deleted from Supabase');
+    return true;
+  } catch (err) {
+    console.error('❌ Error deleting all actions:', err.message);
     return false;
   }
 };

@@ -74,7 +74,7 @@ export const updateCampaignSupabase = async (campaignId, updates) => {
   }
 };
 
-// Supprimer une campaign
+// Supprimer UNE campaign
 export const deleteCampaignSupabase = async (campaignId) => {
   try {
     const { error } = await supabase
@@ -87,6 +87,23 @@ export const deleteCampaignSupabase = async (campaignId) => {
     return true;
   } catch (err) {
     console.error('❌ Error deleting campaign:', err.message);
+    return false;
+  }
+};
+
+// Supprimer TOUTES les campagnes
+export const deleteAllCampaignsSupabase = async () => {
+  try {
+    const { error } = await supabase
+      .from('campaigns')
+      .delete()
+      .neq('id', '');
+    
+    if (error) throw error;
+    console.log('✅ All campaigns deleted from Supabase');
+    return true;
+  } catch (err) {
+    console.error('❌ Error deleting all campaigns:', err.message);
     return false;
   }
 };

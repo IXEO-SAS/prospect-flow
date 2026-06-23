@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { useProspectStore } from '../store';
+import { deleteAllContactsSupabase } from '../services/supabaseContacts';
+import { deleteAllCampaignsSupabase } from '../services/supabaseCampaigns';
+import { deleteAllActionsSupabase } from '../services/supabaseActions';
 
 export default function AdminSettingsModal({ onClose }) {
   const contacts = useProspectStore(s => s.contacts);
@@ -10,25 +13,55 @@ export default function AdminSettingsModal({ onClose }) {
   const updateContact = useProspectStore(s => s.updateContact);
   const addNotification = useProspectStore(s => s.addNotification);
 
-  const handleDeleteAllContacts = () => {
+  const handleDeleteAllContacts = async () => {
     if (window.confirm('⚠️ Êtes-vous ABSOLUMENT SÛR de vouloir supprimer TOUS les contacts ? Cette action est irréversible !')) {
+      const contactCount = contacts.length;
+      
+      // Vider localement
       contacts.forEach(c => removeContact(c.id));
-      addNotification({
-        type: 'error',
-        message: `🗑️ ${contacts.length} contact(s) supprimé(s)`,
-        duration: 2000,
-      });
+      
+      // Supprimer dans Supabase (1 requête)
+      const success = await deleteAllContactsSupabase();
+      
+      if (success) {
+        addNotification({
+          type: 'error',
+          message: `🗑️ ${contactCount} contact(s) supprimé(s) (Supabase)`,
+          duration: 2000,
+        });
+      } else {
+        addNotification({
+          type: 'error',
+          message: `❌ Erreur lors de la suppression`,
+          duration: 2000,
+        });
+      }
     }
   };
 
-  const handleDeleteAllCampaigns = () => {
+  const handleDeleteAllCampaigns = async () => {
     if (window.confirm('⚠️ Êtes-vous sûr de vouloir supprimer TOUTES les campagnes ? Cette action est irréversible !')) {
+      const campaignCount = campaigns.length;
+      
+      // Vider localement
       campaigns.forEach(c => removeCampaign(c.id));
-      addNotification({
-        type: 'error',
-        message: `📍 ${campaigns.length} campagne(s) supprimée(s)`,
-        duration: 2000,
-      });
+      
+      // Supprimer dans Supabase (1 requête)
+      const success = await deleteAllCampaignsSupabase();
+      
+      if (success) {
+        addNotification({
+          type: 'error',
+          message: `📍 ${campaignCount} campagne(s) supprimée(s) (Supabase)`,
+          duration: 2000,
+        });
+      } else {
+        addNotification({
+          type: 'error',
+          message: `❌ Erreur lors de la suppression`,
+          duration: 2000,
+        });
+      }
     }
   };
 
@@ -49,10 +82,28 @@ export default function AdminSettingsModal({ onClose }) {
     }
   };
 
-  const handleResetAll = () => {
-    if (window.confirm('⚠️⚠️⚠️ ATTENTION : Ceci va RÉINITIALISER COMPLÈTEMENT l\'application ! Tous les données seront perdues. Êtes-vous SÛR ?')) {
+  const handleResetAll = async () => {
+    if (window.confirm('⚠️⚠️⚠️ ATTENTION : Ceci va RÉINITIALISER COMPLÈTEMENT l\'application ! Tous les données seront perdues de Supabase ET localement. Êtes-vous SÛR ?')) {
+      // Supprimer de Supabase (3 requêtes en parallèle)
+      await Promise.all([
+        deleteAllContactsSupabase(),
+        deleteAllCampaignsSupabase(),
+        deleteAllActionsSupabase(),
+      ]);
+      
+      // Effacer localement
       localStorage.clear();
-      window.location.reload();
+      
+      addNotification({
+        type: 'error',
+        message: '🧹 Application complètement réinitialisée',
+        duration: 2000,
+      });
+      
+      // Recharger après 1 sec
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   };
 

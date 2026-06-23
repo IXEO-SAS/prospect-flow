@@ -93,7 +93,7 @@ export const updateContactSupabase = async (contactId, updates) => {
   }
 };
 
-// Supprimer un contact
+// Supprimer UN contact
 export const deleteContactSupabase = async (contactId) => {
   try {
     const { error } = await supabase
@@ -106,6 +106,23 @@ export const deleteContactSupabase = async (contactId) => {
     return true;
   } catch (err) {
     console.error('❌ Error deleting contact:', err.message);
+    return false;
+  }
+};
+
+// Supprimer TOUS les contacts
+export const deleteAllContactsSupabase = async () => {
+  try {
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .neq('id', ''); // Supprime tous (neq = not equal)
+    
+    if (error) throw error;
+    console.log('✅ All contacts deleted from Supabase');
+    return true;
+  } catch (err) {
+    console.error('❌ Error deleting all contacts:', err.message);
     return false;
   }
 };
