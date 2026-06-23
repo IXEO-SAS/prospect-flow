@@ -58,10 +58,14 @@ export const useProspectStore = create((set, get) => ({
   // Contacts
   contacts: [],
   addContact: (contact) => {
+    const state = get();
+    const currentUser = state.currentUser;
+    
     const newContact = {
       id: contact.id || generateId(),
       createdAt: new Date().toISOString(),
-      assignedTo: null,
+      // ✅ Si c'est un commercial qui crée, auto-affectation
+      assignedTo: currentUser && currentUser.role === 'commercial' ? currentUser.id : null,
       nextActions: [],
       ...contact,
     };
