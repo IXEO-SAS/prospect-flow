@@ -12,6 +12,14 @@ function App() {
   // Charger l'état au démarrage
   useEffect(() => {
     loadState();
+    
+    // Charger depuis Supabase (fusion avec données locales)
+    const initSupabase = async () => {
+      const initializeFromSupabase = useProspectStore.getState().initializeFromSupabase;
+      await initializeFromSupabase();
+    };
+    
+    initSupabase();
   }, []);
 
   if (!currentUser) {

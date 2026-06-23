@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import { fetchAllUsers, addUserSupabase, approveUserSupabase, rejectUserSupabase } from './services/supabaseUsers';
+import { fetchAllContacts, addContactSupabase, updateContactSupabase, deleteContactSupabase } from './services/supabaseContacts';
+import { fetchAllCampaigns, addCampaignSupabase, updateCampaignSupabase, deleteCampaignSupabase } from './services/supabaseCampaigns';
+import { fetchAllActions, addActionSupabase, deleteActionSupabase } from './services/supabaseActions';
 
 // Générateur d'ID VRAIMENT unique (UUID v4 simplifié)
 const generateId = () => {
@@ -12,7 +16,17 @@ export const useProspectStore = create((set, get) => ({
   users: [], // {id, name, email, role, color, approvalStatus: 'pending'|'approved'|'rejected'}
   
   setCurrentUser: (user) => set({ currentUser: user }),
-  addUser: (user) => set((state) => ({ users: [...state.users, { ...user, approvalStatus: 'pending' }] })),
+  addUser: (user) => {
+    // Ajouter en local
+    set((state) => ({ 
+      users: [...state.users, { ...user, approvalStatus: 'pending' }] 
+    }));
+    
+    // Envoyer à Supabase (async, pas bloquant)
+    addUserSupabase({ ...user, approvalStatus: 'pending' }).catch(err => 
+      console.error('❌ Supabase addUser error:', err)
+    );
+  },
   removeUser: (userId) => set((state) => ({
     users: state.users.filter(u => u.id !== userId),
     // Réaffecter tous les contacts de cet utilisateur à null
@@ -22,30 +36,59 @@ export const useProspectStore = create((set, get) => ({
   })),
   
   // Approbation des comptes
-  approveUser: (userId) => set((state) => ({
-    users: state.users.map(u => u.id === userId ? { ...u, approvalStatus: 'approved' } : u),
-  })),
-  rejectUser: (userId) => set((state) => ({
-    users: state.users.filter(u => u.id !== userId),
-  })),
+  approveUser: (userId) => {
+    set((state) => ({
+      users: state.users.map(u => u.id === userId ? { ...u, approvalStatus: 'approved' } : u),
+    }));
+    
+    approveUserSupabase(userId).catch(err => 
+      console.error('❌ Supabase approveUser error:', err)
+    );
+  },
+  rejectUser: (userId) => {
+    set((state) => ({
+      users: state.users.filter(u => u.id !== userId),
+    }));
+    
+    rejectUserSupabase(userId).catch(err => 
+      console.error('❌ Supabase rejectUser error:', err)
+    );
+  },
   
   // Contacts
   contacts: [],
-  addContact: (contact) => set((state) => ({
-    contacts: [...state.contacts, {
-      id: contact.id || generateId(), // Utilise l'ID passé ou en génère un
+  addContact: (contact) => {
+    const newContact = {
+      id: contact.id || generateId(),
       createdAt: new Date().toISOString(),
       assignedTo: null,
       nextActions: [],
       ...contact,
-    }],
-  })),
-  updateContact: (id, updates) => set((state) => ({
-    contacts: state.contacts.map(c => c.id === id ? { ...c, ...updates } : c),
-  })),
-  deleteContact: (id) => set((state) => ({
-    contacts: state.contacts.filter(c => c.id !== id),
-  })),
+    };
+    
+    set((state) => ({
+      contacts: [...state.contacts, newContact],
+    }));
+    
+    addContactSupabase(newContact).catch(err => 
+      console.error('❌ Supabase addContact error:', err)
+    );
+  },
+  updateContact: (id, updates) => {
+    set((state) => ({
+      contacts: state.contacts.map(c => c.id === id ? { ...c, ...updates } : c),
+    }));
+    
+    updateContactSupabase(id, updates).catch(err => 
+      console.error('❌ Supabase updateContact error:', err)
+    );
+  },
+  deleteContact: (id) => {
+    set((state) => ({
+      contacts: state.contacts.filter(c => c.id !== id),
+    }));
+    deleteContactSupabase(id).catch(err => console.error('❌ Supabase deleteContact error:', err));
+  },
   setContacts: (contacts) => set({ contacts }),
   
   // Campagnes de prospection
@@ -67,9 +110,12 @@ export const useProspectStore = create((set, get) => ({
   })),
   
   // Contacts
-  removeContact: (id) => set((state) => ({
-    contacts: state.contacts.filter(c => c.id !== id),
-  })),
+  removeContact: (id) => {
+    set((state) => ({
+      contacts: state.contacts.filter(c => c.id !== id),
+    }));
+    deleteContactSupabase(id).catch(err => console.error('❌ Supabase removeContact error:', err));
+  },
   
   // Historique actions
   actions: [],
@@ -152,6 +198,33 @@ export const useProspectStore = create((set, get) => ({
         // Clear corrupted data
         localStorage.removeItem('prospect-app-state');
       }
+    }
+  },
+
+  // Charger les données depuis Supabase (appelé au démarrage)
+  initializeFromSupabase: async () => {
+    console.log('🔄 Chargement des données depuis Supabase...');
+    
+    try {
+      const [users, contacts, campaigns, actions] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllContacts(),
+        fetchAllCampaigns(),
+        fetchAllActions(),
+      ]);
+
+      set({
+        users: users.length > 0 ? users : [],
+        contacts: contacts.length > 0 ? contacts : [],
+        campaigns: campaigns.length > 0 ? campaigns : [],
+        actions: actions.length > 0 ? actions : [],
+      });
+
+      console.log('✅ Données chargées depuis Supabase');
+      console.log(`   Users: ${users.length}, Contacts: ${contacts.length}, Campaigns: ${campaigns.length}`);
+    } catch (err) {
+      console.error('❌ Erreur chargement Supabase:', err.message);
+      console.log('⚠️ Utilisation des données locales (localStorage)');
     }
   },
 }));

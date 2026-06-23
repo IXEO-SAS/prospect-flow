@@ -27,3 +27,71 @@ PROCHAINES ETAPES :
 ❌ Un peu plus de setup
 ⏱️ Temps : 3-4h
 → Puis : Déployer sur Vercel
+
+
+
+*****************************
+GENERATION CLES SSH (GITHUB)
+*****************************
+PS C:\Users\u016> ssh-keygen -t ed25519 -C "julienlasbleis-cmd@github.com"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (C:\Users\u016/.ssh/id_ed25519):
+Created directory 'C:\\Users\\u016/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in C:\Users\u016/.ssh/id_ed25519
+Your public key has been saved in C:\Users\u016/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:ATxyEgnhE2tSSgv7SjZjpcxkWNX9hplE0SyYCUgHQ/Q julienlasbleis-cmd@github.com
+The key's randomart image is:
++--[ED25519 256]--+
+|.=%*=*.*o+       |
+|+*o*+ O.+ o      |
+|=+=.E+ o.*       |
+|=+o.    +.o      |
+| X.     S.       |
+|+.o              |
+|.                |
+|                 |
+|                 |
++----[SHA256]-----+
+
+
+Clés publique : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG/VGuU05MjMP/3uP54vmAwcs7QC4AEyq2stxhlYwM7W julienlasbleis-cmd@github.com
+
+
+***************************
+BASE DE DONNEES SUPABASE
+***************************
+Project name : prospect-flow
+Database password : MySecurePass123!@
+
+**************
+PROJECT URL
+**************
+https://cdrrpsqmycgfpwkuqgil.supabase.co
+
+**************
+API keys
+**************
+Publishable key :
+sb_publishable_ol_8gfSvg1lgKqUCrJVgpQ_8VcNx-0C
+Secret key:
+sb_secret_Rfa1vqvD6tcmgt2x49eJ0A_1hxzczgA
+
+anon public : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcnJwc3FteWNnZnB3a3VxZ2lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNTc0ODMsImV4cCI6MjA5NzczMzQ4M30.5XYw-m96xJ61ArOF36Jv7xJEMxmABPuEh6U30MAFa5Q
+service_role secret : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcnJwc3FteWNnZnB3a3VxZ2lsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjE1NzQ4MywiZXhwIjoyMDk3NzMzNDgzfQ.LQHTGfbI4YCTtNq6Nl-riqKI6bYKzZsC_so0ddrbQfM
+
+
+
+*************************
+APP EN PRODUCTION
+*************************
+https://prospect-flow-sandy.vercel.app/
+Administrateur (account SUPABASE)
+admin@ixeo.fr
+MySecurePass123!@
+
+COMPTE LOCAL :
+Email: manager@ixeo.com
+Mot de passe: password123

@@ -21,10 +21,10 @@ export default function AddContactModal({ onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.raisonSociale || !formData.dirigeant || !formData.adresse) {
+    if (!formData.raisonSociale || !formData.dirigeant) {
       addNotification({
         type: 'error',
-        message: 'Raison sociale, dirigeant et adresse sont obligatoires',
+        message: 'Raison sociale et dirigeant sont obligatoires',
         duration: 2000,
       });
       return;
@@ -34,23 +34,26 @@ export default function AddContactModal({ onClose }) {
     setLoading(true);
 
     try {
-      const geo = await geocodeAddress(formData.adresse);
-
-      if (!geo) {
-        addNotification({
-          type: 'error',
-          message: 'Géocodage échoué. Vérifiez l\'adresse',
-          duration: 3000,
-        });
-        setStep(1);
-        setLoading(false);
-        return;
+      let geo = null;
+      
+      // Géocodage OPTIONNEL (non-bloquant)
+      if (formData.adresse && formData.adresse.trim() !== '') {
+        geo = await geocodeAddress(formData.adresse);
+        
+        if (!geo) {
+          addNotification({
+            type: 'warning',
+            message: '⚠️ Adresse non géocodée (apparaîtra pas sur la carte)',
+            duration: 3000,
+          });
+        }
       }
 
+      // Créer le contact MÊME sans géolocalisation
       addContact({
         ...formData,
-        lat: geo.lat,
-        lon: geo.lon,
+        lat: geo?.lat || null,
+        lon: geo?.lon || null,
         status: 'new',
         interests: {},
       });
@@ -60,15 +63,14 @@ export default function AddContactModal({ onClose }) {
         message: `${formData.raisonSociale} ajouté !`,
         duration: 2000,
       });
-
+      
       onClose();
     } catch (err) {
       addNotification({
         type: 'error',
-        message: 'Erreur lors du géocodage',
+        message: 'Erreur lors de la création',
         duration: 2000,
       });
-      setStep(1);
     }
 
     setLoading(false);
