@@ -70,7 +70,7 @@ export const useProspectStore = create((set, get) => ({
     
     const newContact = {
       id: contact.id || generateId(),
-      createdAt: new Date().toISOString(),
+      createdAt: contact.createdAt || new Date().toISOString(),
       // ✅ Si c'est un commercial qui crée, auto-affectation
       assignedTo: currentUser && currentUser.role === 'commercial' ? currentUser.id : null,
       nextActions: [],
@@ -84,6 +84,12 @@ export const useProspectStore = create((set, get) => ({
     addContactSupabase(newContact).catch(err => 
       console.error('❌ Supabase addContact error:', err)
     );
+  },
+  // ✅ Ajouter contact LOCAL UNIQUEMENT (pour Realtime)
+  addContactLocal: (contact) => {
+    set((state) => ({
+      contacts: [...state.contacts, contact],
+    }));
   },
   updateContact: (id, updates) => {
     set((state) => ({
@@ -120,6 +126,12 @@ export const useProspectStore = create((set, get) => ({
     addCampaignSupabase(newCampaign).catch(err => 
       console.error('❌ Supabase addCampaign error:', err)
     );
+  },
+  // ✅ Ajouter campaign LOCAL UNIQUEMENT (pour Realtime)
+  addCampaignLocal: (campaign) => {
+    set((state) => ({
+      campaigns: [...state.campaigns, campaign],
+    }));
   },
   updateCampaign: (id, updates) => {
     set((state) => ({
@@ -164,6 +176,12 @@ export const useProspectStore = create((set, get) => ({
     addActionSupabase(newAction).catch(err => 
       console.error('❌ Supabase addAction error:', err)
     );
+  },
+  // ✅ Ajouter action LOCAL UNIQUEMENT (pour Realtime)
+  addActionLocal: (action) => {
+    set((state) => ({
+      actions: [...state.actions, action],
+    }));
   },
   getContactActions: (contactId) => {
     const { actions } = get();
