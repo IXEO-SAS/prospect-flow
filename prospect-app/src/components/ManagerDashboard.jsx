@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings } from 'lucide-react';
+import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings, Eye } from 'lucide-react';
 import { useProspectStore } from '../store';
 import ImportContacts from './ImportContacts';
 import ContactDetail from './ContactDetail';
@@ -20,6 +20,8 @@ export default function ManagerDashboard() {
   const [showSettings, setShowSettings] = useState(false); // NOUVEAU
 
   const currentUser = useProspectStore(s => s.currentUser);
+  const viewMode = useProspectStore(s => s.viewMode);
+  const setViewMode = useProspectStore(s => s.setViewMode);
   const contacts = useProspectStore(s => s.contacts);
   const deleteContact = useProspectStore(s => s.deleteContact);
   const addNotification = useProspectStore(s => s.addNotification);
@@ -122,6 +124,14 @@ export default function ManagerDashboard() {
             <p className="text-gray-600">Manager • {currentUser?.name}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode(viewMode === 'manager' ? 'commercial' : 'manager')}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              title={viewMode === 'manager' ? 'Voir la vue commerciale' : 'Retour à la vue manager'}
+            >
+              <Eye className="w-5 h-5" />
+              {viewMode === 'manager' ? '👁️ Vue Commercial' : '👁️ Vue Manager'}
+            </button>
             <button
               onClick={() => setShowSettings(true)}
               className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"

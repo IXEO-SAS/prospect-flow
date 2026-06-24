@@ -3,7 +3,7 @@ import { useProspectStore } from './store';
 import { useSupabaseRealtime } from './hooks/useSupabaseRealtime';
 import LoginPage from './components/LoginPage';
 import CommercialDashboard from './components/CommercialDashboard';
-import ManagerDashboard from './components/ManagerDashboard';
+import ManagerDashboardWrapper from './components/ManagerDashboardWrapper';
 import Notifications from './components/Notifications';
 
 function App() {
@@ -31,7 +31,7 @@ function App() {
       {currentUser.role === 'commercial' ? (
         <CommercialDashboard />
       ) : (
-        <ManagerDashboard />
+        <ManagerDashboardWrapper />
       )}
       <Notifications />
     </>

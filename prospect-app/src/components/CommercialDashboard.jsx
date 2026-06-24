@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { MapPin, Phone, LogOut, Plus, Map, List, ChevronDown, CheckCircle, Circle, Download } from 'lucide-react';
+import { MapPin, Phone, LogOut, Plus, Map, List, ChevronDown, CheckCircle, Circle, Download, Eye } from 'lucide-react';
 import { useProspectStore } from '../store';
 import { exportContactsToCSV } from '../csvUtils';
 import ContactDetail from './ContactDetail';
@@ -15,7 +15,7 @@ const statusColors = {
   action: 'bg-green-100 text-green-700',
 };
 
-export default function CommercialDashboard() {
+export default function CommercialDashboard({ onSwitchToManager }) {
   const [viewMode, setViewMode] = useState('list'); // 'list', 'map', 'campaigns'
   const [selectedContact, setSelectedContact] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -36,12 +36,15 @@ export default function CommercialDashboard() {
 
   // Contacts à prospecter (si campagne active) ou ses contacts affectés
   const contactsToShow = useMemo(() => {
-    // Filtre : Un commercial ne voit que les contacts qui lui sont affectés
-    const assignedContacts = contacts.filter(c => c.assignedTo === currentUser?.id);
+    // ✅ Si manager : voir TOUS les contacts
+    // ❌ Si commercial : voir seulement ses contacts affectés
+    const visibleContacts = currentUser?.role === 'manager' 
+      ? contacts 
+      : contacts.filter(c => c.assignedTo === currentUser?.id);
     
     if (activeCampaign) {
       const campaignContactIds = activeCampaign.contacts.map(c => c.id);
-      return assignedContacts
+      return visibleContacts
         .filter(c => campaignContactIds.includes(c.id))
         .sort((a, b) => {
           const distA = activeCampaign.contacts.find(c => c.id === a.id)?.distance || 0;
@@ -49,8 +52,8 @@ export default function CommercialDashboard() {
           return distA - distB;
         });
     }
-    return assignedContacts;
-  }, [contacts, activeCampaign, currentUser?.id]);
+    return visibleContacts;
+  }, [contacts, activeCampaign, currentUser?.id, currentUser?.role]);
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -72,13 +75,25 @@ export default function CommercialDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">ProspectFlow</h1>
             <p className="text-gray-600">Bienvenue, {currentUser?.name}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-          >
-            <LogOut className="w-5 h-5" />
-            Déconnexion
-          </button>
+          <div className="flex items-center gap-2">
+            {onSwitchToManager && (
+              <button
+                onClick={onSwitchToManager}
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Retour à la vue Manager"
+              >
+                <Eye className="w-5 h-5" />
+                👁️ Vue Manager
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+            >
+              <LogOut className="w-5 h-5" />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </div>
 

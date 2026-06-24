@@ -14,8 +14,10 @@ export const useProspectStore = create((set, get) => ({
   // Auth & Users
   currentUser: null,
   users: [], // {id, name, email, role, color, approvalStatus: 'pending'|'approved'|'rejected'}
+  viewMode: 'manager', // 'manager' ou 'commercial' (pour les managers qui veulent voir la vue commercial)
   
   setCurrentUser: (user) => set({ currentUser: user }),
+  setViewMode: (mode) => set({ viewMode: mode }),
   addUser: (user) => {
     // Ajouter en local
     set((state) => ({ 
@@ -85,11 +87,18 @@ export const useProspectStore = create((set, get) => ({
       console.error('❌ Supabase addContact error:', err)
     );
   },
-  // ✅ Ajouter contact LOCAL UNIQUEMENT (pour Realtime)
+  // ✅ Ajouter contact LOCAL UNIQUEMENT (pour Realtime) - avec déduplication
   addContactLocal: (contact) => {
-    set((state) => ({
-      contacts: [...state.contacts, contact],
-    }));
+    set((state) => {
+      // Vérifier que le contact n'existe pas déjà
+      if (state.contacts.some(c => c.id === contact.id)) {
+        console.log('⚠️ Contact déjà présent, pas d\'ajout doublon');
+        return state; // Ne rien ajouter si le contact existe
+      }
+      return {
+        contacts: [...state.contacts, contact],
+      };
+    });
   },
   updateContact: (id, updates) => {
     set((state) => ({
@@ -127,11 +136,18 @@ export const useProspectStore = create((set, get) => ({
       console.error('❌ Supabase addCampaign error:', err)
     );
   },
-  // ✅ Ajouter campaign LOCAL UNIQUEMENT (pour Realtime)
+  // ✅ Ajouter campaign LOCAL UNIQUEMENT (pour Realtime) - avec déduplication
   addCampaignLocal: (campaign) => {
-    set((state) => ({
-      campaigns: [...state.campaigns, campaign],
-    }));
+    set((state) => {
+      // Vérifier que la campagne n'existe pas déjà
+      if (state.campaigns.some(c => c.id === campaign.id)) {
+        console.log('⚠️ Campaign déjà présente, pas d\'ajout doublon');
+        return state;
+      }
+      return {
+        campaigns: [...state.campaigns, campaign],
+      };
+    });
   },
   updateCampaign: (id, updates) => {
     set((state) => ({
@@ -177,11 +193,18 @@ export const useProspectStore = create((set, get) => ({
       console.error('❌ Supabase addAction error:', err)
     );
   },
-  // ✅ Ajouter action LOCAL UNIQUEMENT (pour Realtime)
+  // ✅ Ajouter action LOCAL UNIQUEMENT (pour Realtime) - avec déduplication
   addActionLocal: (action) => {
-    set((state) => ({
-      actions: [...state.actions, action],
-    }));
+    set((state) => {
+      // Vérifier que l'action n'existe pas déjà
+      if (state.actions.some(a => a.id === action.id)) {
+        console.log('⚠️ Action déjà présente, pas d\'ajout doublon');
+        return state;
+      }
+      return {
+        actions: [...state.actions, action],
+      };
+    });
   },
   getContactActions: (contactId) => {
     const { actions } = get();
