@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings, Eye } from 'lucide-react';
+import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings, Eye, Search } from 'lucide-react';
 import { useProspectStore } from '../store';
 import ImportContacts from './ImportContacts';
 import ContactDetail from './ContactDetail';
@@ -22,6 +22,9 @@ export default function ManagerDashboard() {
   // ✅ PAGINATION
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // ✅ RECHERCHE
+  const [searchQuery, setSearchQuery] = useState('');
 
   const currentUser = useProspectStore(s => s.currentUser);
   const viewMode = useProspectStore(s => s.viewMode);
@@ -106,23 +109,48 @@ export default function ManagerDashboard() {
     setCurrentUser(null);
   };
 
-  // Statistiques globales
+  // ✅ FILTRE RECHERCHE (AVANT globalStats!)
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return contacts;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return contacts.filter(contact => {
+      return (
+        (contact.raisonSociale?.toLowerCase().includes(query)) ||
+        (contact.dirigeant?.toLowerCase().includes(query)) ||
+        (contact.telephone?.toLowerCase().includes(query)) ||
+        (contact.email?.toLowerCase().includes(query)) ||
+        (contact.adresse?.toLowerCase().includes(query)) ||
+        (contact.libelleNaf?.toLowerCase().includes(query))
+      );
+    });
+  }, [contacts, searchQuery]);
+
+  // Statistiques globales (utilise filteredContacts)
   const globalStats = useMemo(() => {
     return {
-      totalContacts: contacts.length,
-      newContacts: contacts.filter(c => c.status === 'new').length,
-      contactedContacts: contacts.filter(c => c.status === 'contacted').length,
-      actionContacts: contacts.filter(c => c.status === 'action').length,
+      totalContacts: filteredContacts.length,
+      newContacts: filteredContacts.filter(c => c.status === 'new').length,
+      contactedContacts: filteredContacts.filter(c => c.status === 'contacted').length,
+      actionContacts: filteredContacts.filter(c => c.status === 'action').length,
       totalActions: actions.length,
       activeCampaigns: campaigns.filter(c => c.status === 'active').length,
     };
-  }, [contacts, actions, campaigns]);
+  }, [filteredContacts, actions, campaigns]);
 
-  // ✅ CALCULS PAGINATION
-  const totalPages = Math.ceil(contacts.length / itemsPerPage);
+  // ✅ CALCULS PAGINATION (utilise filteredContacts)
+  const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const contactsToDisplay = contacts.slice(startIndex, endIndex);
+  const contactsToDisplay = filteredContacts.slice(startIndex, endIndex);
+
+  // Réinitialiser à la page 1 si recherche change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
 
   // Réinitialiser à la page 1 si itemsPerPage change
   const handleItemsPerPageChange = (e) => {
@@ -329,6 +357,26 @@ export default function ManagerDashboard() {
               </div>
             </div>
 
+            {/* ✅ BARRE DE RECHERCHE */}
+            <div className="mb-4 relative">
+              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="🔍 Rechercher dans les contacts... (nom, téléphone, adresse, secteur...)"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-gray-600 text-sm">Nouveaux</p>
@@ -369,7 +417,7 @@ export default function ManagerDashboard() {
                       <th className="px-4 py-3 text-left">
                         <input
                           type="checkbox"
-                          checked={selectedContactsForDelete.length === contacts.length && contacts.length > 0}
+                          checked={selectedContactsForDelete.length === filteredContacts.length && filteredContacts.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedContactsForDelete(contacts.map(c => c.id));
@@ -493,7 +541,7 @@ export default function ManagerDashboard() {
 
                 {/* Info pagination */}
                 <div className="text-sm text-gray-600 font-semibold">
-                  Affichage {startIndex + 1} à {Math.min(endIndex, contacts.length)} sur {contacts.length} contacts
+                  Affichage {startIndex + 1} à {Math.min(endIndex, filteredContacts.length)} sur {filteredContacts.length} contacts
                 </div>
 
                 {/* Boutons pagination */}

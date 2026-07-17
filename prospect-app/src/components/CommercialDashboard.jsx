@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { MapPin, Phone, LogOut, Plus, Map, List, ChevronDown, CheckCircle, Circle, Download, Eye } from 'lucide-react';
+import { MapPin, Phone, LogOut, Plus, Map, List, ChevronDown, CheckCircle, Circle, Download, Eye, Search } from 'lucide-react';
 import { useProspectStore } from '../store';
 import { exportContactsToCSV } from '../csvUtils';
 import ContactDetail from './ContactDetail';
@@ -26,6 +26,9 @@ export default function CommercialDashboard({ onSwitchToManager }) {
   // ✅ PAGINATION
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // ✅ RECHERCHE
+  const [searchQuery, setSearchQuery] = useState('');
 
   const currentUser = useProspectStore(s => s.currentUser);
   const contacts = useProspectStore(s => s.contacts);
@@ -59,11 +62,39 @@ export default function CommercialDashboard({ onSwitchToManager }) {
     return visibleContacts;
   }, [contacts, activeCampaign, currentUser?.id, currentUser?.role]);
 
-  // ✅ CALCULS PAGINATION (APRÈS contactsToShow)
-  const totalPages = Math.ceil(contactsToShow.length / itemsPerPage);
+  // ✅ FILTRE RECHERCHE (après contactsToShow)
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return contactsToShow;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return contactsToShow.filter(contact => {
+      // Chercher dans : raison sociale, dirigeant, téléphone, email, adresse, code postal, ville, secteur NAF
+      return (
+        (contact.raisonSociale?.toLowerCase().includes(query)) ||
+        (contact.dirigeant?.toLowerCase().includes(query)) ||
+        (contact.telephone?.toLowerCase().includes(query)) ||
+        (contact.email?.toLowerCase().includes(query)) ||
+        (contact.adresse?.toLowerCase().includes(query)) ||
+        (contact.codePostal?.toLowerCase().includes(query)) ||
+        (contact.ville?.toLowerCase().includes(query)) ||
+        (contact.libelleNaf?.toLowerCase().includes(query))
+      );
+    });
+  }, [contactsToShow, searchQuery]);
+
+  // ✅ PAGINATION (utilise filteredContacts au lieu de contactsToShow)
+  const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const contactsToDisplay = contactsToShow.slice(startIndex, endIndex);
+  const contactsToDisplay = filteredContacts.slice(startIndex, endIndex);
+
+  // Réinitialiser à la page 1 si recherche change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
 
   // Réinitialiser à la page 1 si itemsPerPage change
   const handleItemsPerPageChange = (e) => {
@@ -217,7 +248,7 @@ export default function CommercialDashboard({ onSwitchToManager }) {
           </button>
 
           <button
-            onClick={() => exportContactsToCSV(contactsToShow, `contacts-${new Date().toISOString().split('T')[0]}.csv`)}
+            onClick={() => exportContactsToCSV(filteredContacts, `contacts-${new Date().toISOString().split('T')[0]}.csv`)}
             className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold"
           >
             <Download className="w-5 h-5" />
@@ -225,13 +256,39 @@ export default function CommercialDashboard({ onSwitchToManager }) {
           </button>
         </div>
 
+        {/* ✅ BARRE DE RECHERCHE */}
+        {viewMode === 'list' && (
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="🔍 Rechercher dans les contacts... (nom, téléphone, adresse, secteur...)"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Content */}
         {viewMode === 'list' ? (
           <div className="space-y-2">
-            {contactsToShow.length === 0 ? (
+            {filteredContacts.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Aucun contact</p>
+                <p className="text-gray-500">
+                  {searchQuery 
+                    ? `Aucun contact ne correspond à la recherche "${searchQuery}"` 
+                    : 'Aucun contact'}
+                </p>
               </div>
             ) : (
               contactsToDisplay.map(contact => (
@@ -418,7 +475,7 @@ export default function CommercialDashboard({ onSwitchToManager }) {
             )}
           </div>
         ) : viewMode === 'map' ? (
-          <MapView contacts={contactsToShow} onSelectContact={setSelectedContact} />
+          <MapView contacts={filteredContacts} onSelectContact={setSelectedContact} />
         ) : viewMode === 'campaigns' ? (
           <CampaignsView onSelectContact={setSelectedContact} />
         ) : (
