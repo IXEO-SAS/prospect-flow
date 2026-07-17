@@ -29,6 +29,20 @@ export default function AssignContactsModal({ onClose }) {
     );
   };
 
+  // ✅ Sélectionner/Désélectionner TOUS les contacts visibles
+  const handleSelectAll = () => {
+    if (selectedContacts.length === availableContacts.length) {
+      // Si tous sont sélectionnés, les désélectionner
+      setSelectedContacts([]);
+    } else {
+      // Sinon, sélectionner tous
+      setSelectedContacts(availableContacts.map(c => c.id));
+    }
+  };
+
+  // Vérifier si tous les contacts sont sélectionnés
+  const allSelected = availableContacts.length > 0 && selectedContacts.length === availableContacts.length;
+
   const handleAssign = () => {
     if (!selectedCommercial || selectedContacts.length === 0) {
       addNotification({
@@ -69,24 +83,41 @@ export default function AssignContactsModal({ onClose }) {
           {/* STEP 1: Select contacts */}
           {step === 1 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 <h3 className="font-semibold text-gray-700">
                   Sélectionnez les contacts ({selectedContacts.length} choisi(s))
                 </h3>
-                <label className="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
-                  <input
-                    type="checkbox"
-                    checked={filterUnassigned}
-                    onChange={(e) => {
-                      setFilterUnassigned(e.target.checked);
-                      setSelectedContacts([]); // Réinitialise la sélection
-                    }}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-semibold text-blue-700">
-                    📌 Sans affectation
-                  </span>
-                </label>
+                <div className="flex items-center gap-3">
+                  {/* ✅ CASE SÉLECTIONNER TOUS */}
+                  {availableContacts.length > 0 && (
+                    <label className="flex items-center gap-2 cursor-pointer bg-green-50 px-3 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-semibold text-green-700">
+                        ✅ Tous
+                      </span>
+                    </label>
+                  )}
+                  
+                  <label className="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
+                    <input
+                      type="checkbox"
+                      checked={filterUnassigned}
+                      onChange={(e) => {
+                        setFilterUnassigned(e.target.checked);
+                        setSelectedContacts([]); // Réinitialise la sélection
+                      }}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-semibold text-blue-700">
+                      📌 Sans affectation
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {availableContacts.length === 0 ? (
