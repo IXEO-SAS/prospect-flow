@@ -17,7 +17,11 @@ export default function ManagerDashboard() {
   const [showUserForm, setShowUserForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedContactsForDelete, setSelectedContactsForDelete] = useState([]);
-  const [showSettings, setShowSettings] = useState(false); // NOUVEAU
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // ✅ PAGINATION
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const currentUser = useProspectStore(s => s.currentUser);
   const viewMode = useProspectStore(s => s.viewMode);
@@ -113,6 +117,25 @@ export default function ManagerDashboard() {
       activeCampaigns: campaigns.filter(c => c.status === 'active').length,
     };
   }, [contacts, actions, campaigns]);
+
+  // ✅ CALCULS PAGINATION
+  const totalPages = Math.ceil(contacts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const contactsToDisplay = contacts.slice(startIndex, endIndex);
+
+  // Réinitialiser à la page 1 si itemsPerPage change
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1);
+  };
+
+  // Gérer les changements de page
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -381,7 +404,7 @@ export default function ManagerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {contacts.slice(0, 10).map(contact => {
+                    {contactsToDisplay.map(contact => {
                       const assignedUser = users.find(u => u.id === contact.assignedTo);
                       return (
                         <tr key={contact.id} className={`hover:bg-gray-50 transition ${selectedContactsForDelete.includes(contact.id) ? 'bg-blue-50' : ''}`}>
@@ -449,11 +472,123 @@ export default function ManagerDashboard() {
                   </tbody>
                 </table>
               </div>
-              {contacts.length > 10 && (
-                <div className="px-6 py-4 border-t border-gray-200 text-sm text-gray-600">
-                  Affichage de 10 sur {contacts.length} contacts
+              
+              {/* ✅ FOOTER PAGINATION */}
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between flex-wrap gap-4">
+                {/* Menu déroulant - Nombre de résultats */}
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-semibold text-gray-700">Résultats par page:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={handleItemsPerPageChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-gray-400 transition"
+                  >
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                  </select>
                 </div>
-              )}
+
+                {/* Info pagination */}
+                <div className="text-sm text-gray-600 font-semibold">
+                  Affichage {startIndex + 1} à {Math.min(endIndex, contacts.length)} sur {contacts.length} contacts
+                </div>
+
+                {/* Boutons pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-semibold"
+                    >
+                      ← Précédent
+                    </button>
+
+                    {/* Numéros de page - PAGINATION INTELLIGENTE */}
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const pages = [];
+                        const maxPagesToShow = 5;
+                        const halfPages = Math.floor(maxPagesToShow / 2);
+                        
+                        let startPage = Math.max(1, currentPage - halfPages);
+                        let endPage = Math.min(totalPages, currentPage + halfPages);
+                        
+                        // Ajuster si on est près du début
+                        if (currentPage <= halfPages) {
+                          endPage = Math.min(totalPages, maxPagesToShow);
+                        }
+                        
+                        // Ajuster si on est près de la fin
+                        if (currentPage > totalPages - halfPages) {
+                          startPage = Math.max(1, totalPages - maxPagesToShow + 1);
+                        }
+
+                        // Ajouter les pages
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(i);
+                        }
+
+                        return (
+                          <>
+                            {/* Page 1 si pas visible */}
+                            {startPage > 1 && (
+                              <>
+                                <button
+                                  onClick={() => handlePageChange(1)}
+                                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                                >
+                                  1
+                                </button>
+                                {startPage > 2 && <span className="px-2 text-gray-500">...</span>}
+                              </>
+                            )}
+
+                            {/* Pages à afficher */}
+                            {pages.map(page => (
+                              <button
+                                key={page}
+                                onClick={() => handlePageChange(page)}
+                                className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                                  currentPage === page
+                                    ? 'bg-primary-500 text-white'
+                                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            ))}
+
+                            {/* Dernière page si pas visible */}
+                            {endPage < totalPages && (
+                              <>
+                                {endPage < totalPages - 1 && <span className="px-2 text-gray-500">...</span>}
+                                <button
+                                  onClick={() => handlePageChange(totalPages)}
+                                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                                >
+                                  {totalPages}
+                                </button>
+                              </>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-semibold"
+                    >
+                      Suivant →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -22,6 +22,10 @@ export default function CommercialDashboard({ onSwitchToManager }) {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [expandedContact, setExpandedContact] = useState(null);
+  
+  // ✅ PAGINATION
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const currentUser = useProspectStore(s => s.currentUser);
   const contacts = useProspectStore(s => s.contacts);
@@ -54,6 +58,25 @@ export default function CommercialDashboard({ onSwitchToManager }) {
     }
     return visibleContacts;
   }, [contacts, activeCampaign, currentUser?.id, currentUser?.role]);
+
+  // ✅ CALCULS PAGINATION (APRÈS contactsToShow)
+  const totalPages = Math.ceil(contactsToShow.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const contactsToDisplay = contactsToShow.slice(startIndex, endIndex);
+
+  // Réinitialiser à la page 1 si itemsPerPage change
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1);
+  };
+
+  // Gérer les changements de page
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -211,7 +234,7 @@ export default function CommercialDashboard({ onSwitchToManager }) {
                 <p className="text-gray-500">Aucun contact</p>
               </div>
             ) : (
-              contactsToShow.map(contact => (
+              contactsToDisplay.map(contact => (
                 <div key={contact.id} className="bg-white rounded-lg shadow hover:shadow-md transition">
                   <div
                     onClick={() => setExpandedContact(expandedContact === contact.id ? null : contact.id)}
@@ -282,6 +305,116 @@ export default function CommercialDashboard({ onSwitchToManager }) {
                   )}
                 </div>
               ))
+            )}
+            
+            {/* ✅ FOOTER PAGINATION */}
+            {contactsToShow.length > 0 && totalPages > 1 && (
+              <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between flex-wrap gap-4 mt-4">
+                {/* Menu déroulant - Nombre de résultats */}
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-semibold text-gray-700">Résultats par page:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={handleItemsPerPageChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-gray-400 transition"
+                  >
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+
+                {/* Info pagination */}
+                <div className="text-sm text-gray-600 font-semibold">
+                  Affichage {startIndex + 1} à {Math.min(endIndex, contactsToShow.length)} sur {contactsToShow.length} contacts
+                </div>
+
+                {/* Boutons pagination */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-semibold"
+                  >
+                    ← Précédent
+                  </button>
+
+                  {/* Numéros de page - PAGINATION INTELLIGENTE */}
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxPagesToShow = 5;
+                      const halfPages = Math.floor(maxPagesToShow / 2);
+                      
+                      let startPage = Math.max(1, currentPage - halfPages);
+                      let endPage = Math.min(totalPages, currentPage + halfPages);
+                      
+                      if (currentPage <= halfPages) {
+                        endPage = Math.min(totalPages, maxPagesToShow);
+                      }
+                      
+                      if (currentPage > totalPages - halfPages) {
+                        startPage = Math.max(1, totalPages - maxPagesToShow + 1);
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(i);
+                      }
+
+                      return (
+                        <>
+                          {startPage > 1 && (
+                            <>
+                              <button
+                                onClick={() => handlePageChange(1)}
+                                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                              >
+                                1
+                              </button>
+                              {startPage > 2 && <span className="px-2 text-gray-500">...</span>}
+                            </>
+                          )}
+
+                          {pages.map(page => (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                                currentPage === page
+                                  ? 'bg-primary-500 text-white'
+                                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+
+                          {endPage < totalPages && (
+                            <>
+                              {endPage < totalPages - 1 && <span className="px-2 text-gray-500">...</span>}
+                              <button
+                                onClick={() => handlePageChange(totalPages)}
+                                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                              >
+                                {totalPages}
+                              </button>
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-semibold"
+                  >
+                    Suivant →
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ) : viewMode === 'map' ? (
