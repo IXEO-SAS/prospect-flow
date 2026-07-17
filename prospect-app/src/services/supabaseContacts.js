@@ -1,15 +1,35 @@
 import { supabase } from '../supabaseClient';
 
-// Récupérer tous les contacts
+// Récupérer tous les contacts (avec pagination pour > 1000)
 export const fetchAllContacts = async () => {
   try {
-    const { data, error } = await supabase
+    // ✅ REQUÊTE 1 : Premiers 1000 contacts
+    const { data: data1, error: error1 } = await supabase
       .from('contacts')
-      .select('*');
+      .select('*')
+      .order('id', { ascending: true })
+      .range(0, 999); // 0-999 = 1000 contacts
     
-    if (error) throw error;
+    if (error1) throw error1;
+
+    // ✅ REQUÊTE 2 : Contacts suivants (offset 1000)
+    const { data: data2, error: error2 } = await supabase
+      .from('contacts')
+      .select('*')
+      .order('id', { ascending: true })
+      .range(1000, 9999); // À partir de 1000 (cherche jusqu'à 10k par sécurité)
     
-    return data.map(c => ({
+    if (error2) throw error2;
+
+    // ✅ COMBINER LES DEUX
+    const allData = [...(data1 || []), ...(data2 || [])];
+    
+    // ✅ LOG DE DEBUG
+    console.log('📊 Contacts reçus (requête 1):', data1?.length || 0);
+    console.log('📊 Contacts reçus (requête 2):', data2?.length || 0);
+    console.log('📊 TOTAL Contacts chargés:', allData.length);
+    
+    return allData.map(c => ({
       id: c.id,
       raisonSociale: c.raison_sociale,
       dirigeant: c.dirigeant,
