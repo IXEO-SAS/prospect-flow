@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings, Eye, Search } from 'lucide-react';
+import { BarChart3, Users, Activity, LogOut, Plus, TrendingUp, Lock, Settings, Eye, Search, Edit } from 'lucide-react';
 import { useProspectStore } from '../store';
 import ImportContacts from './ImportContacts';
 import ContactDetail from './ContactDetail';
@@ -8,6 +8,7 @@ import AddCommercialForm from './AddCommercialForm';
 import AssignContactsModal from './AssignContactsModal';
 import AdminApproval from './AdminApproval';
 import AdminSettingsModal from './AdminSettingsModal';
+import EditCommercialModal from './EditCommercialModal';
 
 export default function ManagerDashboard() {
   const [showImport, setShowImport] = useState(false);
@@ -18,6 +19,7 @@ export default function ManagerDashboard() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedContactsForDelete, setSelectedContactsForDelete] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [editingCommercial, setEditingCommercial] = useState(null); // ✅ NOUVEAU
   
   // ✅ PAGINATION
   const [currentPage, setCurrentPage] = useState(1);
@@ -669,15 +671,26 @@ export default function ManagerDashboard() {
                 const userCampaigns = campaigns.filter(c => c.commercialId === user.id && c.status === 'active');
                 return (
                   <div key={user.id} className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="w-12 h-12 rounded-full"
-                        style={{ backgroundColor: user.color }}
-                      ></div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-full"
+                          style={{ backgroundColor: user.color }}
+                        ></div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
                       </div>
+                      
+                      {/* ✅ BOUTON ÉDITION */}
+                      <button
+                        onClick={() => setEditingCommercial(user)}
+                        className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition"
+                        title="Éditer ce commercial"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
                     </div>
 
                     {userCampaigns.length > 0 ? (
@@ -765,6 +778,18 @@ export default function ManagerDashboard() {
       )}
       {showSettings && (
         <AdminSettingsModal onClose={() => setShowSettings(false)} />
+      )}
+
+      {/* ✅ MODAL ÉDITION COMMERCIAL */}
+      {editingCommercial && (
+        <EditCommercialModal
+          commercial={editingCommercial}
+          onClose={() => setEditingCommercial(null)}
+          onSave={() => {
+            // Rafraîchir les données si besoin
+            setEditingCommercial(null);
+          }}
+        />
       )}
     </div>
   );
