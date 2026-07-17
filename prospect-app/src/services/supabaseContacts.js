@@ -1,32 +1,38 @@
 import { supabase } from '../supabaseClient';
 
-// Récupérer tous les contacts (avec pagination pour > 1000)
+// Récupérer tous les contacts (avec pagination dynamique pour > 1000)
 export const fetchAllContacts = async () => {
   try {
-    // ✅ REQUÊTE 1 : Premiers 1000 contacts
-    const { data: data1, error: error1 } = await supabase
-      .from('contacts')
-      .select('*')
-      .order('id', { ascending: true })
-      .range(0, 999); // 0-999 = 1000 contacts
-    
-    if (error1) throw error1;
+    const allData = [];
+    let offset = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    // ✅ REQUÊTE 2 : Contacts suivants (offset 1000)
-    const { data: data2, error: error2 } = await supabase
-      .from('contacts')
-      .select('*')
-      .order('id', { ascending: true })
-      .range(1000, 9999); // À partir de 1000 (cherche jusqu'à 10k par sécurité)
-    
-    if (error2) throw error2;
+    // ✅ BOUCLE DYNAMIQUE : charger par chunks jusqu'à ce qu'il n'y ait plus de données
+    while (hasMore) {
+      const rangeStart = offset;
+      const rangeEnd = offset + pageSize - 1;
 
-    // ✅ COMBINER LES DEUX
-    const allData = [...(data1 || []), ...(data2 || [])];
-    
-    // ✅ LOG DE DEBUG
-    console.log('📊 Contacts reçus (requête 1):', data1?.length || 0);
-    console.log('📊 Contacts reçus (requête 2):', data2?.length || 0);
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('id', { ascending: true })
+        .range(rangeStart, rangeEnd);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // Pas plus de données, on arrête
+        hasMore = false;
+        console.log('✅ Fin de pagination atteinte');
+      } else {
+        // Ajouter les données et continuer
+        allData.push(...data);
+        console.log(`📊 Requête ${Math.floor(offset / pageSize) + 1}: ${data.length} contacts (offset: ${rangeStart})`);
+        offset += pageSize;
+      }
+    }
+
     console.log('📊 TOTAL Contacts chargés:', allData.length);
     
     return allData.map(c => ({
